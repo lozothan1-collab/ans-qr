@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ANS QR</title>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    body{
+      font-family:Arial,sans-serif;
+      background:#f3f5f4;
+      margin:0;
+      padding:16px;
+    }
+    .box{
+      max-width:500px;
+      margin:auto;
+      background:white;
+      padding:20px;
+      border-radius:18px;
+    }
+    h2{text-align:center}
+    #reader{width:100%}
+
+    button{
+      width:100%;
+      padding:16px;
+      margin-top:15px;
+      border:0;
+      border-radius:12px;
+      background:#16804b;
+      color:white;
+      font-size:18px;
+      font-weight:bold;
+    }
+
+    input{
+      width:100%;
+      padding:15px;
+      font-size:22px;
+      box-sizing:border-box;
+      border:1px solid #ccc;
+      border-radius:10px;
+    }
+
+    .options{
+      display:flex;
+      gap:8px;
+      margin-top:8px;
+    }
+
+    label{
+      flex:1;
+      text-align:center;
+      padding:12px 5px;
+      border:1px solid #ccc;
+      border-radius:10px;
+    }
+
+    #form{display:none}
+    .title{margin-top:18px;margin-bottom:7px;font-weight:bold}
+    #qr{word-break:break-all;background:#eee;padding:10px;border-radius:8px}
+    #status{text-align:center;margin:12px}
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <h2>📷 ANS QR</h2>
+
+  <div id="scan">
+
+    <div id="reader"></div>
+
+    <div id="status">
+      ກົດເພື່ອເປີດກ້ອງ
+    </div>
+
+    <button onclick="startCamera()">
+      📷 ເປີດກ້ອງ
+    </button>
+
+  </div>
+
+
+  <div id="form">
+
+    <div class="title">ລະຫັດ QR</div>
+    <div id="qr"></div>
+
+    <div class="title">ລາຄາ</div>
+
+    <input
+      id="price"
+      type="number"
+      inputmode="decimal"
+      placeholder="0"
+    >
+
+
+    <div class="title">ສະກຸນເງິນ</div>
+
+    <div class="options">
+
+      <label>
+        <input type="radio"
+               name="currency"
+               value="LAK"
+               checked>
+        ກີບ
+      </label>
+
+      <label>
+        <input type="radio"
+               name="currency"
+               value="THB">
+        ບາດ
+      </label>
+
+      <label>
+        <input type="radio"
+               name="currency"
+               value="USD">
+        ໂດລາ
+      </label>
+
+    </div>
+
+
+    <div class="title">ການຊຳລະ</div>
+
+    <div class="options">
+
+      <label>
+        <input type="radio"
+               name="payment"
+               value="ເງິນສົດ"
+               checked>
+        💵 ເງິນສົດ
+      </label>
+
+      <label>
+        <input type="radio"
+               name="payment"
+               value="ເງິນໂອນ">
+        📱 ເງິນໂອນ
+      </label>
+
+    </div>
+
+    <button onclick="saveData()">
+      ບັນທຶກ
+    </button>
+
+    <div id="status2"></div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const API =
+"https://script.google.com/macros/s/AKfycbyMm6KyuKLwu6miWRo_Z46jBwohl3D8gjxpqUBrET_pUXAbUBrs6zd5QdHMQLGivPShew/exec";
+
+let scanner;
+let qrCode = "";
+let locked = false;
+
+
+async function startCamera(){
+
+  document.getElementById("status").innerText =
+    "ກຳລັງເປີດກ້ອງ...";
+
+  scanner = new Html5Qrcode("reader");
+
+  try{
+
+    await scanner.start(
+      { facingMode:"environment" },
+      { fps:10, qrbox:250 },
+      qrSuccess
+    );
+
+    document.getElementById("status").innerText =
+      "ນຳ QR ເຂົ້າໃນກອບ";
+
+  }catch(error){
+
+    document.getElementById("status").innerText =
+      "❌ " + error;
+
+  }
+}
+
+
+async function qrSuccess(text){
+
+  if(locked) return;
+
+  locked = true;
+  qrCode = text;
+
+  try{
+    await scanner.stop();
+  }catch(e){}
+
+  document.getElementById("qr").innerText =
+    qrCode;
+
+  document.getElementById("scan").style.display =
+    "none";
+
+  document.getElementById("form").style.display =
+    "block";
+
+  document.getElementById("price").focus();
+}
+
+
+async function saveData(){
+
+  const price =
+    document.getElementById("price").value;
+
+  if(price === ""){
+    alert("ກະລຸນາໃສ່ລາຄາ");
+    return;
+  }
+
+  const currency =
+    document.querySelector(
+      'input[name="currency"]:checked'
+    ).value;
+
+  const payment =
+    document.querySelector(
+      'input[name="payment"]:checked'
+    ).value;
+
+
+  document.getElementById("status2").innerText =
+    "ກຳລັງບັນທຶກ...";
+
+
+  const url =
+    API +
+    "?qr=" + encodeURIComponent(qrCode) +
+    "&price=" + encodeURIComponent(price) +
+    "&currency=" + encodeURIComponent(currency) +
+    "&payment=" + encodeURIComponent(payment);
+
+
+  try{
+
+    await fetch(url,{
+      method:"GET",
+      mode:"no-cors"
+    });
+
+    document.getElementById("status2").innerText =
+      "✅ ບັນທຶກສຳເລັດ";
+
+    setTimeout(()=>{
+      location.reload();
+    },1200);
+
+  }catch(error){
+
+    document.getElementById("status2").innerText =
+      "❌ ບັນທຶກບໍ່ສຳເລັດ";
+
+  }
+}
+
+</script>
+
+</body>
+</html>
