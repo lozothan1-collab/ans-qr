@@ -227,24 +227,22 @@ function saveData(){
     "&payment=" + encodeURIComponent(payment) +
     "&t=" + Date.now();
 
-  /* ส่งผ่าน iframe เพื่อไม่ให้ Safari บล็อกคำขอ */
-  const frame = document.createElement("iframe");
+ fetch(url, {
+  method: "GET",
+  mode: "no-cors"
+})
+.then(function() {
+  status.innerText = "✅ ບັນທຶກສຳເລັດ";
+  button.innerText = "✓ ສຳເລັດ";
 
-  frame.style.display = "none";
-  frame.src = url;
-
-  document.body.appendChild(frame);
-
-  setTimeout(function(){
-
-    status.innerText = "✅ ສົ່ງຂໍ້ມູນແລ້ວ";
-    button.innerText = "✓ ສຳເລັດ";
-
-    setTimeout(function(){
-      location.reload();
-    },1500);
-
-  },2000);
+  setTimeout(function() {
+    location.reload();
+  }, 1500);
+})
+.catch(function(error) {
+  status.innerText = "❌ ບັນທຶກບໍ່ສຳເລັດ";
+  button.disabled = false;
+});
 }
 
 </script>
